@@ -134,6 +134,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear previous results
         connectionDetails.innerHTML = '';
         
+        // Add recommendation for fastest connection
+        if (connections.length > 0) {
+            const fastestConnection = connections[0];
+            const mainLine = getMainTransportLine(fastestConnection);
+            
+            if (mainLine) {
+                const recommendationDiv = document.createElement('div');
+                recommendationDiv.className = 'recommendation';
+                recommendationDiv.textContent = `Take the ${mainLine}`;
+                connectionDetails.appendChild(recommendationDiv);
+            }
+        }
+        
         // Process each connection
         connections.forEach(connection => {
             // Create connection summary
@@ -347,6 +360,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
             });
         }
+    }
+
+    /**
+     * Gets the main transport line from a connection
+     * @param {Object} connection - Connection data from the API
+     * @returns {string|null} - Main transport line or null if not found
+     */
+    function getMainTransportLine(connection) {
+        if (!connection.sections || !Array.isArray(connection.sections)) {
+            return null;
+        }
+        
+        // Find the first journey section (excluding walking)
+        const journeySection = connection.sections.find(section => section.journey);
+        
+        if (!journeySection || !journeySection.journey) {
+            return null;
+        }
+        
+        const transport = journeySection.journey.category || '';
+        const line = journeySection.journey.number || '';
+        
+        if (transport && line) {
+            return `${transport} ${line}`.trim();
+        } else if (transport) {
+            return transport;
+        } else if (line) {
+            return line;
+        }
+        
+        return null;
     }
 
     // Initialize the app
