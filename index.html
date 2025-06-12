@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3498db">
+    <title>Office Transit</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="img/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+</head>
+<body>
+    <main>
+        <div class="action-buttons">
+            <button id="go-to-office" class="action-button">Go to Office</button>
+            <button id="go-home" class="action-button">Go Home</button>
+        </div>
+
+        <div id="connection-result" class="hidden">
+            <div class="connection-header">
+                <h2 id="connection-title">Your Connections</h2>
+                <button id="close-connection" class="close-button">×</button>
+            </div>
+            <div id="connection-details"></div>
+        </div>
+
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Finding the best connection...</p>
+        </div>
+    </main>
+
+    <footer>
+        <button id="settings-button">Settings</button>
+    </footer>
+
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="close-settings" class="close-button">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="settings-form">
+                    <div class="form-group">
+                        <label for="home-station">Home Station:</label>
+                        <input type="text" id="home-station" placeholder="Enter your home station" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="office-station">Office Station:</label>
+                        <input type="text" id="office-station" placeholder="Enter your office station" required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="direct-connections" name="direct-connections">
+                        <label for="direct-connections">Direct connections only (no changes)</label>
+                    </div>
+                    <button type="submit" class="save-button">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/api.js"></script>
+</body>
+</html> 

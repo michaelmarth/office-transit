@@ -1,0 +1,319 @@
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2980b9;
+    --text-color: #333;
+    --light-gray: #f5f5f5;
+    --gray: #ddd;
+    --dark-gray: #777;
+    --success-color: #27ae60;
+    --error-color: #e74c3c;
+    --warning-color: #f39c12;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: white;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 15px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 15px 0 70px 0;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+}
+
+.action-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex: 1;
+}
+
+.action-button:hover, .action-button:focus {
+    background-color: var(--secondary-color);
+}
+
+#connection-result {
+    background-color: var(--light-gray);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.connection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--dark-gray);
+}
+
+#connection-details {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.connection-summary {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.connection-time {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.connection-duration {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.transport-lines {
+    font-size: 0.9rem;
+    padding: 8px 0;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.connection-legs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.leg {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray);
+}
+
+.leg:last-child {
+    border-bottom: none;
+}
+
+.leg-time {
+    font-weight: 500;
+}
+
+.leg-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.leg-type {
+    font-weight: 500;
+}
+
+.leg-platform {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    background-color: var(--light-gray);
+    border-radius: 4px;
+    text-align: center;
+}
+
+.delay {
+    color: var(--error-color);
+    font-weight: 500;
+}
+
+#loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 0;
+    gap: 15px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+#settings-button {
+    background-color: transparent;
+    border: 1px solid var(--gray);
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid var(--gray);
+}
+
+.modal-body {
+    padding: 15px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--gray);
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkbox-group label {
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color);
+}
+
+.save-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.save-button:hover {
+    background-color: var(--secondary-color);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.error-message {
+    color: var(--error-color);
+    background-color: rgba(231, 76, 60, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+@media (prefers-reduced-motion) {
+    .spinner {
+        animation: none;
+    }
+}
+
+@media (max-width: 320px) {
+    .action-button {
+        font-size: 0.9rem;
+        padding: 12px 8px;
+    }
+} 

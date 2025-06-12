@@ -1,0 +1,354 @@
+/**
+ * Office Transit PWA
+ * Main application logic
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const goToOfficeBtn = document.getElementById('go-to-office');
+    const goHomeBtn = document.getElementById('go-home');
+    const connectionResult = document.getElementById('connection-result');
+    const connectionDetails = document.getElementById('connection-details');
+    const connectionTitle = document.getElementById('connection-title');
+    const closeConnectionBtn = document.getElementById('close-connection');
+    const loadingIndicator = document.getElementById('loading');
+    const settingsBtn = document.getElementById('settings-button');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings');
+    const settingsForm = document.getElementById('settings-form');
+    const homeStationInput = document.getElementById('home-station');
+    const officeStationInput = document.getElementById('office-station');
+    const directConnectionsCheckbox = document.getElementById('direct-connections');
+
+    // App State
+    const state = {
+        homeStation: localStorage.getItem('homeStation') || '',
+        officeStation: localStorage.getItem('officeStation') || '',
+        directConnectionsOnly: localStorage.getItem('directConnectionsOnly') === 'true',
+        isSettingsConfigured: false
+    };
+
+    // Initialize the app
+    function init() {
+        // Check if settings are configured
+        state.isSettingsConfigured = Boolean(state.homeStation && state.officeStation);
+        
+        // Set input values from local storage
+        homeStationInput.value = state.homeStation;
+        officeStationInput.value = state.officeStation;
+        directConnectionsCheckbox.checked = state.directConnectionsOnly;
+
+        // Show settings modal if not configured
+        if (!state.isSettingsConfigured) {
+            openSettingsModal();
+        }
+
+        // Register service worker for PWA
+        registerServiceWorker();
+    }
+
+    // Event Listeners
+    goToOfficeBtn.addEventListener('click', () => getConnection('home-to-office'));
+    goHomeBtn.addEventListener('click', () => getConnection('office-to-home'));
+    closeConnectionBtn.addEventListener('click', hideConnectionResult);
+    settingsBtn.addEventListener('click', openSettingsModal);
+    closeSettingsBtn.addEventListener('click', closeSettingsModal);
+    settingsForm.addEventListener('submit', saveSettings);
+
+    /**
+     * Fetches and displays a connection
+     * @param {string} direction - Either 'home-to-office' or 'office-to-home'
+     */
+    async function getConnection(direction) {
+        if (!state.isSettingsConfigured) {
+            openSettingsModal();
+            return;
+        }
+
+        showLoading();
+
+        try {
+            let from, to, title;
+            
+            if (direction === 'home-to-office') {
+                from = state.homeStation;
+                to = state.officeStation;
+                title = 'Home to Office';
+            } else {
+                from = state.officeStation;
+                to = state.homeStation;
+                title = 'Office to Home';
+            }
+
+            connectionTitle.textContent = title;
+
+            const data = await TransportAPI.getConnections(from, to);
+            
+            if (!data.connections || data.connections.length === 0) {
+                showError('No connections found');
+                return;
+            }
+
+            // Filter for direct connections if the option is enabled
+            let filteredConnections = [...data.connections];
+            
+            if (state.directConnectionsOnly) {
+                filteredConnections = filteredConnections.filter(connection => {
+                    // A direct connection has only one journey section (not counting walking)
+                    const journeySections = connection.sections.filter(section => section.journey);
+                    return journeySections.length <= 1;
+                });
+            }
+            
+            // If no connections match the filter, show all connections
+            if (filteredConnections.length === 0 && state.directConnectionsOnly) {
+                filteredConnections = [...data.connections];
+                
+                // Clear any existing content first
+                connectionDetails.innerHTML = '';
+                
+                // Display the warning at the top
+                showError('No direct connections found. Showing all available connections.', true);
+            }
+            
+            // Sort connections by arrival time (fastest first)
+            const sortedConnections = filteredConnections.sort((a, b) => {
+                const arrivalA = new Date(a.to.arrival);
+                const arrivalB = new Date(b.to.arrival);
+                return arrivalA - arrivalB;
+            });
+
+            // Display the connections
+            displayConnections(sortedConnections);
+        } catch (error) {
+            showError(`Error: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    /**
+     * Displays multiple connections in the UI
+     * @param {Array<Object>} connections - Array of connection data from the API
+     */
+    function displayConnections(connections) {
+        // Clear previous results
+        connectionDetails.innerHTML = '';
+        
+        // Process each connection
+        connections.forEach(connection => {
+            // Create connection summary
+            const summary = document.createElement('div');
+            summary.className = 'connection-summary';
+            
+            // Add departure and arrival times
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'connection-time';
+            
+            const departure = new Date(connection.from.departure);
+            const arrival = new Date(connection.to.arrival);
+            
+            const departureTime = formatTime(departure);
+            const arrivalTime = formatTime(arrival);
+            
+            timeDiv.innerHTML = `
+                <span>${departureTime}</span>
+                <span>→</span>
+                <span>${arrivalTime}</span>
+            `;
+            
+            // Add duration
+            const durationDiv = document.createElement('div');
+            durationDiv.className = 'connection-duration';
+            
+            // Calculate duration from departure and arrival times
+            const durationMs = arrival - departure;
+            const durationMinutes = Math.floor(durationMs / 60000);
+            
+            if (durationMinutes > 0) {
+                if (durationMinutes >= 60) {
+                    const hours = Math.floor(durationMinutes / 60);
+                    const mins = durationMinutes % 60;
+                    durationDiv.textContent = `${hours}h ${mins}min`;
+                } else {
+                    durationDiv.textContent = `${durationMinutes}min`;
+                }
+            } else {
+                durationDiv.textContent = '';
+            }
+            
+            // Create simplified transport lines info
+            const linesDiv = document.createElement('div');
+            linesDiv.className = 'transport-lines';
+            
+            // Extract only transport lines (no walking)
+            let transportLines = '';
+            
+            if (connection.sections && Array.isArray(connection.sections)) {
+                transportLines = connection.sections
+                    .filter(section => section.journey)
+                    .map(section => {
+                        const transport = section.journey.category || '';
+                        const line = section.journey.number || '';
+                        return `${transport} ${line}`.trim();
+                    })
+                    .join(' → ');
+            }
+            
+            linesDiv.textContent = transportLines;
+            
+            // Assemble the connection summary
+            summary.appendChild(timeDiv);
+            summary.appendChild(durationDiv);
+            summary.appendChild(linesDiv);
+            
+            // Add to the connection details
+            connectionDetails.appendChild(summary);
+        });
+        
+        // Show the connection result
+        showConnectionResult();
+    }
+
+    /**
+     * Shows an error message
+     * @param {string} message - Error message to display
+     * @param {boolean} [append=false] - Whether to append the error or replace content
+     */
+    function showError(message, append = false) {
+        const errorHtml = `
+            <div class="error-message">
+                ${message}
+            </div>
+        `;
+        
+        if (append) {
+            connectionDetails.insertAdjacentHTML('afterbegin', errorHtml);
+        } else {
+            connectionDetails.innerHTML = errorHtml;
+        }
+        
+        showConnectionResult();
+    }
+
+    /**
+     * Shows the connection result container
+     */
+    function showConnectionResult() {
+        connectionResult.classList.remove('hidden');
+    }
+
+    /**
+     * Hides the connection result container
+     */
+    function hideConnectionResult() {
+        connectionResult.classList.add('hidden');
+    }
+
+    /**
+     * Shows the loading indicator
+     */
+    function showLoading() {
+        loadingIndicator.classList.remove('hidden');
+    }
+
+    /**
+     * Hides the loading indicator
+     */
+    function hideLoading() {
+        loadingIndicator.classList.add('hidden');
+    }
+
+    /**
+     * Opens the settings modal
+     */
+    function openSettingsModal() {
+        settingsModal.classList.remove('hidden');
+    }
+
+    /**
+     * Closes the settings modal
+     */
+    function closeSettingsModal() {
+        settingsModal.classList.add('hidden');
+    }
+
+    /**
+     * Saves the settings from the form
+     * @param {Event} event - Form submit event
+     */
+    function saveSettings(event) {
+        event.preventDefault();
+        
+        const homeStation = homeStationInput.value.trim();
+        const officeStation = officeStationInput.value.trim();
+        const directConnectionsOnly = directConnectionsCheckbox.checked;
+        
+        if (!homeStation || !officeStation) {
+            alert('Please enter both home and office stations');
+            return;
+        }
+        
+        // Save to state and local storage
+        state.homeStation = homeStation;
+        state.officeStation = officeStation;
+        state.directConnectionsOnly = directConnectionsOnly;
+        state.isSettingsConfigured = true;
+        
+        localStorage.setItem('homeStation', homeStation);
+        localStorage.setItem('officeStation', officeStation);
+        localStorage.setItem('directConnectionsOnly', directConnectionsOnly);
+        
+        closeSettingsModal();
+    }
+
+    /**
+     * Formats a date object to a time string (HH:MM)
+     * @param {Date} date - Date object
+     * @returns {string} - Formatted time string
+     */
+    function formatTime(date) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /**
+     * Formats duration in seconds to a readable string
+     * @param {number} seconds - Duration in seconds
+     * @returns {string} - Formatted duration string
+     */
+    function formatDuration(seconds) {
+        // Check if seconds is a valid number
+        if (typeof seconds !== 'number' || isNaN(seconds)) {
+            return '';
+        }
+        
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        
+        if (hours > 0) {
+            return `${hours}h ${remainingMinutes}min`;
+        } else {
+            return `${minutes}min`;
+        }
+    }
+
+    /**
+     * Registers the service worker for PWA functionality
+     */
+    function registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    }
+
+    // Initialize the app
+    init();
+}); 
