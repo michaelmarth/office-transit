@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (type === 'office') officeStationValid = false;
             return;
         }
+        showSuggestionSkeletons(suggestionsContainer);
         TransportAPI.searchLocations(query)
             .then(data => {
                 // Use stations or locations array, fallback to empty array
@@ -141,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function prepopulateNearestStations(input, suggestionsContainer, type) {
         if (input.value.trim().length > 0) return;
         suggestionsContainer.innerHTML = '';
-        suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion">Finding nearby stations...</div>';
+        showSuggestionSkeletons(suggestionsContainer);
         TransportAPI.getCurrentLocation()
             .then(coords => TransportAPI.getNearestStations(coords.latitude, coords.longitude))
             .then(data => {
@@ -212,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        showLoading();
+        showConnectionSkeletons();
 
         try {
             let from, to, title;
@@ -232,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await TransportAPI.getConnections(from, to);
             
             if (!data.connections || data.connections.length === 0) {
-                showError('No connections found. Please check your station names or try again later.', false, () => getConnection(direction));
+                showError('<b>No connections found.</b><br>Check your station names or try again later.', false, () => getConnection(direction));
                 return;
             }
 
@@ -494,6 +495,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error('ServiceWorker registration failed:', error);
                     });
             });
+        }
+    }
+
+    function showConnectionSkeletons(count = 3) {
+        connectionDetails.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'skeleton skeleton-connection';
+            connectionDetails.appendChild(skeleton);
+        }
+        showConnectionResult();
+    }
+
+    function showSuggestionSkeletons(container, count = 4) {
+        container.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'skeleton skeleton-suggestion';
+            container.appendChild(skeleton);
         }
     }
 

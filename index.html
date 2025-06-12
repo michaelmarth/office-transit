@@ -45,11 +45,13 @@
                 <form id="settings-form">
                     <div class="form-group">
                         <label for="home-station">Home Station:</label>
-                        <input type="text" id="home-station" placeholder="Enter your home station" required>
+                        <input type="text" id="home-station" placeholder="Enter your home station" autocomplete="off" required>
+                        <div id="home-station-suggestions" class="autocomplete-suggestions"></div>
                     </div>
                     <div class="form-group">
                         <label for="office-station">Office Station:</label>
-                        <input type="text" id="office-station" placeholder="Enter your office station" required>
+                        <input type="text" id="office-station" placeholder="Enter your office station" autocomplete="off" required>
+                        <div id="office-station-suggestions" class="autocomplete-suggestions"></div>
                     </div>
                     <div class="form-group checkbox-group">
                         <input type="checkbox" id="direct-connections" name="direct-connections">

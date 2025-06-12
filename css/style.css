@@ -351,4 +351,54 @@ input[type="checkbox"] {
     text-align: center;
     margin-bottom: 15px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid var(--gray);
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    z-index: 10;
+    width: 100%;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.autocomplete-suggestion {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--gray);
+    background: white;
+    transition: background 0.15s;
+}
+.autocomplete-suggestion:last-child {
+    border-bottom: none;
+}
+.autocomplete-suggestion:hover, .autocomplete-suggestion:focus {
+    background: var(--light-gray);
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f5f5f5 25%, #e0e0e0 50%, #f5f5f5 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.2s infinite linear;
+    border-radius: 6px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-connection {
+    height: 70px;
+    margin-bottom: 15px;
+}
+
+.skeleton-suggestion {
+    height: 24px;
+    margin-bottom: 6px;
+    width: 90%;
 } 
