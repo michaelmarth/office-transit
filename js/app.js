@@ -97,6 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
     homeStationInput.addEventListener('focus', () => prepopulateNearestStations(homeStationInput, homeStationSuggestions, 'home'));
     officeStationInput.addEventListener('focus', () => prepopulateNearestStations(officeStationInput, officeStationSuggestions, 'office'));
 
+    /**
+     * Handles station input for autocomplete
+     * @param {HTMLInputElement} input
+     * @param {HTMLElement} suggestionsContainer
+     * @param {string} type - 'home' or 'office'
+     */
     function handleStationInput(input, suggestionsContainer, type) {
         const query = input.value.trim();
         if (query.length < 2) {
@@ -139,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    // Prepopulate nearest stations using geolocation if input is empty
     function prepopulateNearestStations(input, suggestionsContainer, type) {
         if (input.value.trim().length > 0) return;
         suggestionsContainer.innerHTML = '';
@@ -495,15 +502,12 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {string} - Formatted duration string
      */
     function formatDuration(seconds) {
-        // Check if seconds is a valid number
         if (typeof seconds !== 'number' || isNaN(seconds)) {
             return '';
         }
-        
         const minutes = Math.floor(seconds / 60);
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
-        
         if (hours > 0) {
             return `${hours}h ${remainingMinutes}min`;
         } else {
@@ -528,6 +532,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Shows skeleton loaders for connection results
+     * @param {number} [count=3] - Number of skeletons to show
+     */
     function showConnectionSkeletons(count = 3) {
         connectionDetails.innerHTML = '';
         for (let i = 0; i < count; i++) {
@@ -538,6 +546,11 @@ document.addEventListener('DOMContentLoaded', () => {
         showConnectionResult();
     }
 
+    /**
+     * Shows skeleton loaders for autocomplete suggestions
+     * @param {HTMLElement} container - The container to fill with skeletons
+     * @param {number} [count=4] - Number of skeletons to show
+     */
     function showSuggestionSkeletons(container, count = 4) {
         container.innerHTML = '';
         for (let i = 0; i < count; i++) {
