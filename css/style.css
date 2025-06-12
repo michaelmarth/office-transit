@@ -401,4 +401,26 @@ input[type="checkbox"] {
     height: 24px;
     margin-bottom: 6px;
     width: 90%;
+}
+
+.connection-delay {
+    color: var(--error-color);
+    background: rgba(231, 76, 60, 0.08);
+    border-left: 4px solid var(--error-color);
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.platform-change {
+    color: var(--warning-color);
+    background: rgba(241, 196, 15, 0.08);
+    border-left: 4px solid var(--warning-color);
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 1rem;
 } 

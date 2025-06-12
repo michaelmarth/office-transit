@@ -361,7 +361,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             linesDiv.textContent = transportLines;
-            
+
+            // Highlight delays and platform changes
+            let hasDelay = false;
+            let delayText = '';
+            let platformChange = false;
+            let platformText = '';
+            if (connection.sections && Array.isArray(connection.sections)) {
+                connection.sections.forEach(section => {
+                    if (section.departure && section.departure.delay && section.departure.delay > 0) {
+                        hasDelay = true;
+                        delayText = `+${section.departure.delay} min delay`;
+                    }
+                    if (section.departure && section.departure.platform && section.arrival && section.arrival.platform && section.departure.platform !== section.arrival.platform) {
+                        platformChange = true;
+                        platformText = `Platform change: ${section.departure.platform} → ${section.arrival.platform}`;
+                    }
+                });
+            }
+            if (hasDelay) {
+                const delayDiv = document.createElement('div');
+                delayDiv.className = 'connection-delay';
+                delayDiv.textContent = delayText;
+                summary.appendChild(delayDiv);
+            }
+            if (platformChange) {
+                const platformDiv = document.createElement('div');
+                platformDiv.className = 'platform-change';
+                platformDiv.textContent = platformText;
+                summary.appendChild(platformDiv);
+            }
+
             // Assemble the connection summary
             summary.appendChild(timeDiv);
             summary.appendChild(durationDiv);
