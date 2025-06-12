@@ -516,23 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Registers the service worker for PWA functionality
-     */
-    function registerServiceWorker() {
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful with scope:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('ServiceWorker registration failed:', error);
-                    });
-            });
-        }
-    }
-
-    /**
      * Shows skeleton loaders for connection results
      * @param {number} [count=3] - Number of skeletons to show
      */
@@ -557,6 +540,44 @@ document.addEventListener('DOMContentLoaded', () => {
             const skeleton = document.createElement('div');
             skeleton.className = 'skeleton skeleton-suggestion';
             container.appendChild(skeleton);
+        }
+    }
+
+    // In-app update notification for new service worker
+    function showUpdateNotification() {
+        let updateDiv = document.getElementById('update-notification');
+        if (!updateDiv) {
+            updateDiv = document.createElement('div');
+            updateDiv.id = 'update-notification';
+            updateDiv.innerHTML = '<span>A new version is available.</span> <button id="reload-btn">Refresh</button>';
+            updateDiv.className = 'update-notification';
+            document.body.appendChild(updateDiv);
+            document.getElementById('reload-btn').onclick = () => window.location.reload(true);
+        }
+    }
+
+    function registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(registration => {
+                        // Listen for updates
+                        if (registration.waiting) {
+                            showUpdateNotification();
+                        }
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            });
         }
     }
 
