@@ -2,6 +2,12 @@
  * Office Transit PWA
  * Main application logic
  */
+// Office Transit PWA - Main Application Logic
+// This file contains all the core logic for the Office Transit PWA, including UI handling, API calls, autocomplete, connection display, and service worker update notifications.
+
+// Wait for the DOM to be fully loaded before running the app logic
+// This ensures all elements are available for manipulation
+// and is the main entry point for the app.
 document.addEventListener('DOMContentLoaded', () => {
     /**
      * Gets the main transport line from a connection
