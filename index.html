@@ -11,6 +11,7 @@
     <link rel="apple-touch-icon" href="img/icon-192.png">
 </head>
 <body>
+    <div class="ios-header">Office Transit</div>
     <main>
         <div class="action-buttons">
             <button id="go-to-office" class="action-button">Go to Office</button>
@@ -32,7 +33,12 @@
     </main>
 
     <footer>
-        <button id="settings-button">Settings</button>
+        <button id="settings-button" aria-label="Settings" title="Settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+            </svg>
+        </button>
     </footer>
 
     <div id="settings-modal" class="modal hidden">
