@@ -85,6 +85,32 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsForm.addEventListener('submit', saveSettings);
 
     /**
+     * Shows an error message with optional retry
+     * @param {string} message - Error message to display
+     * @param {boolean} [append=false] - Whether to append the error or replace content
+     * @param {Function} [retryFn] - Optional retry function
+     */
+    function showError(message, append = false, retryFn) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.innerHTML = message;
+        if (retryFn) {
+            const retryBtn = document.createElement('button');
+            retryBtn.textContent = 'Retry';
+            retryBtn.className = 'retry-button';
+            retryBtn.onclick = retryFn;
+            errorDiv.appendChild(retryBtn);
+        }
+        if (append) {
+            connectionDetails.insertAdjacentElement('afterbegin', errorDiv);
+        } else {
+            connectionDetails.innerHTML = '';
+            connectionDetails.appendChild(errorDiv);
+        }
+        showConnectionResult();
+    }
+
+    /**
      * Fetches and displays a connection
      * @param {string} direction - Either 'home-to-office' or 'office-to-home'
      */
@@ -114,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await TransportAPI.getConnections(from, to);
             
             if (!data.connections || data.connections.length === 0) {
-                showError('No connections found');
+                showError('No connections found. Please check your station names or try again later.', false, () => getConnection(direction));
                 return;
             }
 
@@ -132,11 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // If no connections match the filter, show all connections
             if (filteredConnections.length === 0 && state.directConnectionsOnly) {
                 filteredConnections = [...data.connections];
-                
-                // Clear any existing content first
                 connectionDetails.innerHTML = '';
-                
-                // Display the warning at the top
                 showError('No direct connections found. Showing all available connections.', true);
             }
             
@@ -150,7 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Display the connections
             displayConnections(sortedConnections);
         } catch (error) {
-            showError(`Error: ${error.message}`);
+            let userMessage = 'An error occurred while fetching connections.';
+            if (error.message && error.message.includes('Failed to fetch')) {
+                userMessage = 'Network error. Please check your internet connection.';
+            } else if (error.message && error.message.match(/429|rate limit|too many requests/i)) {
+                userMessage = 'API rate limit reached. Please try again in a few minutes.';
+            } else if (error.message && error.message.match(/5\d\d/)) {
+                userMessage = 'The public transport API is currently unavailable. Please try again later.';
+            }
+            showError(userMessage, false, () => getConnection(direction));
         } finally {
             hideLoading();
         }
@@ -249,27 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         // Show the connection result
-        showConnectionResult();
-    }
-
-    /**
-     * Shows an error message
-     * @param {string} message - Error message to display
-     * @param {boolean} [append=false] - Whether to append the error or replace content
-     */
-    function showError(message, append = false) {
-        const errorHtml = `
-            <div class="error-message">
-                ${message}
-            </div>
-        `;
-        
-        if (append) {
-            connectionDetails.insertAdjacentHTML('afterbegin', errorHtml);
-        } else {
-            connectionDetails.innerHTML = errorHtml;
-        }
-        
         showConnectionResult();
     }
 
