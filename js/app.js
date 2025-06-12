@@ -3,6 +3,36 @@
  * Main application logic
  */
 document.addEventListener('DOMContentLoaded', () => {
+    /**
+     * Gets the main transport line from a connection
+     * @param {Object} connection - Connection data from the API
+     * @returns {string|null} - Main transport line or null if not found
+     */
+    function getMainTransportLine(connection) {
+        if (!connection.sections || !Array.isArray(connection.sections)) {
+            return null;
+        }
+        
+        // Find the first journey section (excluding walking)
+        const journeySection = connection.sections.find(section => section.journey);
+        
+        if (!journeySection || !journeySection.journey) {
+            return null;
+        }
+        
+        const transport = journeySection.journey.category || '';
+        const line = journeySection.journey.number || '';
+        
+        if (transport && line) {
+            return `${transport} ${line}`.trim();
+        } else if (transport) {
+            return transport;
+        } else if (line) {
+            return line;
+        }
+        
+        return null;
+    }
     // DOM Elements
     const goToOfficeBtn = document.getElementById('go-to-office');
     const goHomeBtn = document.getElementById('go-home');
@@ -360,37 +390,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
             });
         }
-    }
-
-    /**
-     * Gets the main transport line from a connection
-     * @param {Object} connection - Connection data from the API
-     * @returns {string|null} - Main transport line or null if not found
-     */
-    function getMainTransportLine(connection) {
-        if (!connection.sections || !Array.isArray(connection.sections)) {
-            return null;
-        }
-        
-        // Find the first journey section (excluding walking)
-        const journeySection = connection.sections.find(section => section.journey);
-        
-        if (!journeySection || !journeySection.journey) {
-            return null;
-        }
-        
-        const transport = journeySection.journey.category || '';
-        const line = journeySection.journey.number || '';
-        
-        if (transport && line) {
-            return `${transport} ${line}`.trim();
-        } else if (transport) {
-            return transport;
-        } else if (line) {
-            return line;
-        }
-        
-        return null;
     }
 
     // Initialize the app
