@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeStationInput = document.getElementById('home-station');
     const officeStationInput = document.getElementById('office-station');
     const directConnectionsCheckbox = document.getElementById('direct-connections');
+    const homeStationSuggestions = document.getElementById('home-station-suggestions');
+    const officeStationSuggestions = document.getElementById('office-station-suggestions');
 
     // App State
     const state = {
@@ -56,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
         directConnectionsOnly: localStorage.getItem('directConnectionsOnly') === 'true',
         isSettingsConfigured: false
     };
+
+    let homeStationValid = true;
+    let officeStationValid = true;
 
     // Initialize the app
     function init() {
@@ -83,6 +88,93 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsBtn.addEventListener('click', openSettingsModal);
     closeSettingsBtn.addEventListener('click', closeSettingsModal);
     settingsForm.addEventListener('submit', saveSettings);
+
+    // Autocomplete logic
+    homeStationInput.addEventListener('input', () => handleStationInput(homeStationInput, homeStationSuggestions, 'home'));
+    officeStationInput.addEventListener('input', () => handleStationInput(officeStationInput, officeStationSuggestions, 'office'));
+    homeStationInput.addEventListener('blur', () => setTimeout(() => homeStationSuggestions.innerHTML = '', 200));
+    officeStationInput.addEventListener('blur', () => setTimeout(() => officeStationSuggestions.innerHTML = '', 200));
+    homeStationInput.addEventListener('focus', () => prepopulateNearestStations(homeStationInput, homeStationSuggestions, 'home'));
+    officeStationInput.addEventListener('focus', () => prepopulateNearestStations(officeStationInput, officeStationSuggestions, 'office'));
+
+    function handleStationInput(input, suggestionsContainer, type) {
+        const query = input.value.trim();
+        if (query.length < 2) {
+            suggestionsContainer.innerHTML = '';
+            if (type === 'home') homeStationValid = false;
+            if (type === 'office') officeStationValid = false;
+            return;
+        }
+        TransportAPI.searchLocations(query)
+            .then(data => {
+                // Use stations or locations array, fallback to empty array
+                const arr = data.stations || data.locations || [];
+                // Only show real stations: must have id and name, and either type is 'station' or type is missing
+                const stations = arr.filter(station => station.id && station.name && (!station.type || station.type === 'station'));
+                if (!stations.length) {
+                    suggestionsContainer.innerHTML = '';
+                    if (type === 'home') homeStationValid = false;
+                    if (type === 'office') officeStationValid = false;
+                    return;
+                }
+                suggestionsContainer.innerHTML = '';
+                stations.forEach(station => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-suggestion';
+                    div.textContent = station.name;
+                    div.onclick = () => {
+                        input.value = station.name;
+                        suggestionsContainer.innerHTML = '';
+                        if (type === 'home') homeStationValid = true;
+                        if (type === 'office') officeStationValid = true;
+                    };
+                    suggestionsContainer.appendChild(div);
+                });
+            })
+            .catch(() => {
+                suggestionsContainer.innerHTML = '';
+                if (type === 'home') homeStationValid = false;
+                if (type === 'office') officeStationValid = false;
+            });
+    }
+
+    function prepopulateNearestStations(input, suggestionsContainer, type) {
+        if (input.value.trim().length > 0) return;
+        suggestionsContainer.innerHTML = '';
+        suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion">Finding nearby stations...</div>';
+        TransportAPI.getCurrentLocation()
+            .then(coords => TransportAPI.getNearestStations(coords.latitude, coords.longitude))
+            .then(data => {
+                suggestionsContainer.innerHTML = '';
+                // Use stations or locations array, fallback to empty array
+                const arr = data.stations || data.locations || [];
+                // Only show real stations: must have id and name, and either type is 'station' or type is missing
+                const stations = arr.filter(station => station.id && station.name && (!station.type || station.type === 'station'));
+                if (!stations.length) {
+                    suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion">No nearby stations found</div>';
+                    if (type === 'home') homeStationValid = false;
+                    if (type === 'office') officeStationValid = false;
+                    return;
+                }
+                stations.forEach(station => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-suggestion';
+                    div.textContent = station.name;
+                    div.onclick = () => {
+                        input.value = station.name;
+                        suggestionsContainer.innerHTML = '';
+                        if (type === 'home') homeStationValid = true;
+                        if (type === 'office') officeStationValid = true;
+                    };
+                    suggestionsContainer.appendChild(div);
+                });
+            })
+            .catch(() => {
+                suggestionsContainer.innerHTML = '<div class="autocomplete-suggestion">Could not get your location</div>';
+                if (type === 'home') homeStationValid = false;
+                if (type === 'office') officeStationValid = false;
+            });
+    }
 
     /**
      * Shows an error message with optional retry
@@ -337,6 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!homeStation || !officeStation) {
             alert('Please enter both home and office stations');
+            return;
+        }
+        if (!homeStationValid || !officeStationValid) {
+            alert('Please select valid stations from the suggestions.');
             return;
         }
         
