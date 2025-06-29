@@ -1,7 +1,7 @@
 /**
  * Office Transit PWA - Service Worker
  */
-const CACHE_NAME = 'office-transit-v3';
+const CACHE_NAME = 'office-transit-v4';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

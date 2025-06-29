@@ -61,12 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         homeStation: localStorage.getItem('homeStation') || '',
         officeStation: localStorage.getItem('officeStation') || '',
+        homeStationLat: localStorage.getItem('homeStationLat') ? parseFloat(localStorage.getItem('homeStationLat')) : null,
+        homeStationLng: localStorage.getItem('homeStationLng') ? parseFloat(localStorage.getItem('homeStationLng')) : null,
+        officeStationLat: localStorage.getItem('officeStationLat') ? parseFloat(localStorage.getItem('officeStationLat')) : null,
+        officeStationLng: localStorage.getItem('officeStationLng') ? parseFloat(localStorage.getItem('officeStationLng')) : null,
         directConnectionsOnly: localStorage.getItem('directConnectionsOnly') === 'true',
         isSettingsConfigured: false
     };
 
     let homeStationValid = true;
     let officeStationValid = true;
+
+    // Temporary variables to hold selected station coordinates
+    let selectedHomeCoords = null;
+    let selectedOfficeCoords = null;
 
     // Initialize the app
     function init() {
@@ -85,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Register service worker for PWA
         registerServiceWorker();
+
+        // Call proximity check on startup
+        checkProximityAndFetch();
     }
 
     // Event Listeners
@@ -120,9 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showSuggestionSkeletons(suggestionsContainer);
         TransportAPI.searchLocations(query)
             .then(data => {
-                // Use stations or locations array, fallback to empty array
                 const arr = data.stations || data.locations || [];
-                // Only show real stations: must have id and name, and either type is 'station' or type is missing
                 const stations = arr.filter(station => station.id && station.name && (!station.type || station.type === 'station'));
                 if (!stations.length) {
                     suggestionsContainer.innerHTML = '';
@@ -138,8 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     div.onclick = () => {
                         input.value = station.name;
                         suggestionsContainer.innerHTML = '';
-                        if (type === 'home') homeStationValid = true;
-                        if (type === 'office') officeStationValid = true;
+                        if (type === 'home') {
+                            homeStationValid = true;
+                            selectedHomeCoords = { lat: station.coordinate?.x, lng: station.coordinate?.y };
+                        }
+                        if (type === 'office') {
+                            officeStationValid = true;
+                            selectedOfficeCoords = { lat: station.coordinate?.x, lng: station.coordinate?.y };
+                        }
                     };
                     suggestionsContainer.appendChild(div);
                 });
@@ -466,11 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function saveSettings(event) {
         event.preventDefault();
-        
         const homeStation = homeStationInput.value.trim();
         const officeStation = officeStationInput.value.trim();
         const directConnectionsOnly = directConnectionsCheckbox.checked;
-        
         if (!homeStation || !officeStation) {
             alert('Please enter both home and office stations');
             return;
@@ -479,17 +492,27 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please select valid stations from the suggestions.');
             return;
         }
-        
         // Save to state and local storage
         state.homeStation = homeStation;
         state.officeStation = officeStation;
         state.directConnectionsOnly = directConnectionsOnly;
         state.isSettingsConfigured = true;
-        
+        // Save coordinates if available
+        if (selectedHomeCoords) {
+            state.homeStationLat = selectedHomeCoords.lat;
+            state.homeStationLng = selectedHomeCoords.lng;
+            localStorage.setItem('homeStationLat', selectedHomeCoords.lat);
+            localStorage.setItem('homeStationLng', selectedHomeCoords.lng);
+        }
+        if (selectedOfficeCoords) {
+            state.officeStationLat = selectedOfficeCoords.lat;
+            state.officeStationLng = selectedOfficeCoords.lng;
+            localStorage.setItem('officeStationLat', selectedOfficeCoords.lat);
+            localStorage.setItem('officeStationLng', selectedOfficeCoords.lng);
+        }
         localStorage.setItem('homeStation', homeStation);
         localStorage.setItem('officeStation', officeStation);
         localStorage.setItem('directConnectionsOnly', directConnectionsOnly);
-        
         closeSettingsModal();
     }
 
@@ -584,6 +607,62 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error('ServiceWorker registration failed:', error);
                     });
             });
+        }
+    }
+
+    // Haversine formula for distance in meters
+    function haversineDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371000;
+        const toRad = x => x * Math.PI / 180;
+        const dLat = toRad(lat2 - lat1);
+        const dLng = toRad(lng2 - lng1);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    // Add flashButton utility
+    function flashButton(btn) {
+        const originalBg = btn.style.background;
+        const computedBg = window.getComputedStyle(btn).background;
+        let flashes = 0;
+        function doFlash() {
+            btn.style.transition = 'background 0.2s, transform 0.2s';
+            btn.style.background = '#ffe066'; // solid yellow
+            btn.style.transform = 'scale(1.06)';
+            setTimeout(() => {
+                btn.style.background = originalBg || computedBg;
+                btn.style.transform = 'scale(1)';
+                flashes++;
+                if (flashes < 2) {
+                    setTimeout(doFlash, 350); // pause between flashes
+                } else {
+                    setTimeout(() => { btn.style.transition = ''; }, 200);
+                }
+            }, 400); // flash duration
+        }
+        doFlash();
+    }
+
+    // Proximity check and auto-fetch on startup
+    async function checkProximityAndFetch() {
+        if (!state.isSettingsConfigured || !state.homeStationLat || !state.homeStationLng || !state.officeStationLat || !state.officeStationLng) return;
+        try {
+            const { latitude, longitude } = await TransportAPI.getCurrentLocation();
+            const distHome = haversineDistance(latitude, longitude, state.homeStationLat, state.homeStationLng);
+            const distOffice = haversineDistance(latitude, longitude, state.officeStationLat, state.officeStationLng);
+            const RADIUS = 300; // meters
+            if (distHome < RADIUS) {
+                flashButton(goToOfficeBtn);
+                getConnection('home-to-office');
+            } else if (distOffice < RADIUS) {
+                flashButton(goHomeBtn);
+                getConnection('office-to-home');
+            }
+        } catch (e) {
+            // Ignore location errors
         }
     }
 
